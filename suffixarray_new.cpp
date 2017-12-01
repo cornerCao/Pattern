@@ -3,6 +3,7 @@
  * Input: 输入字符串个数和字符串数组，这里为了避免unicode，把字符用ord转换成了int型
  * Output: 输出公共子串长度*覆盖字符串数最大的结果的长度和起始位置
 */  
+#include <Python.h>
 #include <iostream>  
 #include <cstdio>  
 #include <fstream>
@@ -12,7 +13,7 @@
 #include <stack>
 #include <vector>
 #include <exception>
-const int MAXL = 0x1000f, MAXN = 5002;  
+const int MAXL = 0x1000f, MAXN = 5002;
 class StkEle{
 public:
     int _height;
@@ -36,7 +37,7 @@ struct RetRes//返回值结构体
     int len;
     int covernum;
     int pos;
-};
+}retres;
 struct SuffixArray  //后缀数组
 {  
     struct RadixElement  
@@ -163,7 +164,7 @@ void init(int strnum, int* strarr)  //init global array
         }
     } 
 }  
-RetRes mysolve()  
+void mysolve()  
 {  
     int i = 0;
     int j = 0;
@@ -242,12 +243,12 @@ RetRes mysolve()
                     respos = i;
                 }
             }
-            RetRes retres;
             retres.len = maxlen;
             retres.covernum = maxcover;
             retres.pos = respos;
-            return retres;
+            return;
 }  
+/*
 extern "C"{
     RetRes solve(int strnum, int* strarr)
     {
@@ -256,4 +257,26 @@ extern "C"{
             RetRes retres = mysolve();
             return retres;     
     }
+}*/
+static PyObject* solve(PyObject* self, PyObject* args){
+    PyObject* py_tuple;
+    int* strarr;
+    int strnum;
+    int len;
+    if (!PyArg_ParseTuple(args, "iiO", &strnum, &len, &py_tuple))
+        return NULL;
+    strarr = (int*)malloc(len*4);
+    while(len--){
+        strarr[len] = (int)PyInt_AsLong(PyTuple_GetItem(py_tuple,len));
+    }
+    init(strnum, strarr);
+    mysolve();
+    return Py_BuildValue("iii", retres.len, retres.covernum, retres.pos);
+}
+static PyMethodDef solve_methods[] = {
+    {"solve", (PyCFunction)solve, METH_VARARGS},
+    {NULL, NULL}
+};
+PyMODINIT_FUNC initLCS(){
+    Py_InitModule3("LCS", solve_methods,"solve lcs problem");
 }
